@@ -40,7 +40,7 @@ class ProductServiceApplicationTests {
 				.expectStatus().isEqualTo(UNPROCESSABLE_ENTITY)
 				.expectBody()
 				.jsonPath("$.path").isEqualTo("/product/" + PRODUCT_ID_INVALID)
-				.jsonPath("$.message").isEqualTo("Invalide productId: " + PRODUCT_ID_INVALID);
+				.jsonPath("$.message").isEqualTo("Invalid productId: " + PRODUCT_ID_INVALID);
 	}
 
 	@Test
