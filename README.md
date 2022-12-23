@@ -21,18 +21,19 @@ If you are interested in setting up this project then:
 * Run single services eg. product-service.
 
         java -jar microservices/product-service/build/libs/*.jar
-* Run all services.
 
-        ./run
+* Build & Run with docker in detached mode.
+
+        ./run.bash
         -------------- or ------------------
-        java -jar microservices/product-composite-service/build/libs/*.jar &
-        java -jar microservices/product-service/build/libs/*.jar &
-        java -jar microservices/recommendation-service/build/libs/*.jar &
-        java -jar microservices/review-service/build/libs/*.jar &
+        ./gradlew clean build && docker-compose build && docker-compose up -d
+        -------------- or ------------------
+        docker-compose build && docker-compose up -d
 
 ## Dependencies
 
-        implementation 'org.springframework.boot:spring-boot-starter-actuator'
+        implementation 'org.springdoc:springdoc-openapi-common:1.5.9'
         implementation 'org.springframework.boot:spring-boot-starter-webflux'
-        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        implementation 'org.springframework.boot:spring-boot-starter-actuator'
         testImplementation 'io.projectreactor:reactor-test'
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'

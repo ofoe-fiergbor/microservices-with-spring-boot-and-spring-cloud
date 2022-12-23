@@ -9,11 +9,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import se.magnus.api.exceptions.BadRequestException;
 import se.magnus.api.exceptions.InvalidInputException;
 import se.magnus.api.exceptions.NotFoundException;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;;
 
 @RestControllerAdvice
 public class GlobalControllerExceptionHandler {
@@ -33,6 +35,14 @@ public class GlobalControllerExceptionHandler {
             ServerHttpRequest request, InvalidInputException ex) {
 
         return createHttpErrorInfo(UNPROCESSABLE_ENTITY, request, ex);
+    }
+
+    @ResponseStatus(BAD_REQUEST)
+    @ExceptionHandler(BadRequestException.class)
+    public @ResponseBody HttpErrorInfo handleBadRequestException(
+            ServerHttpRequest request, BadRequestException ex) {
+
+        return createHttpErrorInfo(BAD_REQUEST, request, ex);
     }
 
     private HttpErrorInfo createHttpErrorInfo(
