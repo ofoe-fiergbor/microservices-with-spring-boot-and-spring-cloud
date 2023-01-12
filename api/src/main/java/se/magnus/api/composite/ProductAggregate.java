@@ -10,6 +10,16 @@ public class ProductAggregate {
     private final List<ReviewSummary> reviews;
     private final List<RecommendationSummary> recommendations;
 
+    public ProductAggregate() {
+        productId = 0;
+        name = null;
+        weight = 0;
+        recommendations = null;
+        reviews = null;
+        serviceAddresses = null;
+    }
+
+    
     public ProductAggregate(
             int productId,
             String name,

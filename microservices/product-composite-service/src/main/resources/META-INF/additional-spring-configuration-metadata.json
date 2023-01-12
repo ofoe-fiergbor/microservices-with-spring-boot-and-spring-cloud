@@ -118,5 +118,25 @@
     "name": "api.responseCodes.unprocessableEntity.description",
     "type": "java.lang.String",
     "description": "A description for 'api.responseCodes.unprocessableEntity.description'"
+  },
+  {
+    "name": "api.product-composite.create-composite-product.description",
+    "type": "java.lang.String",
+    "description": "A description for 'api.product-composite.create-composite-product.description'"
+  },
+  {
+    "name": "api.product-composite.create-composite-product.notes",
+    "type": "java.lang.String",
+    "description": "A description for 'api.product-composite.create-composite-product.notes'"
+  },
+  {
+    "name": "api.product-composite.delete-composite-product.description",
+    "type": "java.lang.String",
+    "description": "A description for 'api.product-composite.delete-composite-product.description'"
+  },
+  {
+    "name": "api.product-composite.delete-composite-product.notes",
+    "type": "java.lang.String",
+    "description": "A description for 'api.product-composite.delete-composite-product.notes'"
   }
 ]}

@@ -1,70 +1,137 @@
 package se.magnus.microservices.core.product;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static reactor.core.publisher.Mono.just;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import se.magnus.api.core.product.Product;
+import se.magnus.microservices.core.product.persistence.ProductRepository;
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
-class ProductServiceApplicationTests {
-	private static final int PRODUCT_ID_OK = 1;
-	private static final int PRODUCT_ID_NOT_FOUND = 13;
-	private static final int PRODUCT_ID_INVALID = 0;
+class ProductServiceApplicationTests extends MongoDbTestBase {
 
 	@Autowired
-	private WebTestClient webTestClient;
+	private WebTestClient client;
 
-	@Test
-	public void shouldGetProductById() {
-		webTestClient.get()
-				.uri("/product/" + PRODUCT_ID_OK)
-				.exchange()
-				.expectHeader().contentType(APPLICATION_JSON)
-				.expectStatus().isOk()
-				.expectBody()
-				.jsonPath("$.productId").isEqualTo(PRODUCT_ID_OK)
-				.jsonPath("$.name").isEqualTo("name-" + PRODUCT_ID_OK);
+	@Autowired
+	private ProductRepository repository;
 
+	@BeforeEach
+	void setupDb() {
+		repository.deleteAll();
 	}
 
 	@Test
-	public void shouldThrowInvalidException_withInvalidId() {
-		webTestClient.get()
-				.uri("/product/" + PRODUCT_ID_INVALID)
-				.exchange()
-				.expectHeader().contentType(APPLICATION_JSON)
-				.expectStatus().isEqualTo(UNPROCESSABLE_ENTITY)
-				.expectBody()
-				.jsonPath("$.path").isEqualTo("/product/" + PRODUCT_ID_INVALID)
-				.jsonPath("$.message").isEqualTo("Invalid productId: " + PRODUCT_ID_INVALID);
+	void contextLoads() {
+	}
+	@Test
+	void getProductById() {
+
+		int productId = 1;
+
+		postAndVerifyProduct(productId, OK);
+
+		assertTrue(repository.findByProductId(productId).isPresent());
+
+		getAndVerifyProduct(productId, OK).jsonPath("$.productId").isEqualTo(productId);
 	}
 
 	@Test
-	public void shouldThrowNotFoundException_withIdOfNonExistingProduct() {
-		webTestClient.get()
-				.uri("/product/" + PRODUCT_ID_NOT_FOUND)
-				.exchange()
-				.expectHeader().contentType(APPLICATION_JSON)
-				.expectStatus().isNotFound()
-				.expectBody()
-				.jsonPath("$.path").isEqualTo("/product/" + PRODUCT_ID_NOT_FOUND)
-				.jsonPath("$.message").isEqualTo("No product found for productId: " + PRODUCT_ID_NOT_FOUND);
+	void duplicateError() {
 
+		int productId = 1;
+
+		postAndVerifyProduct(productId, OK);
+
+		assertTrue(repository.findByProductId(productId).isPresent());
+
+		postAndVerifyProduct(productId, UNPROCESSABLE_ENTITY)
+				.jsonPath("$.path").isEqualTo("/product")
+				.jsonPath("$.message").isEqualTo("Duplicate key, Product Id: " + productId);
 	}
 
 	@Test
-	public void shouldThrowBadRequestException_withIdThatIsOfTypeString() {
-		webTestClient.get()
-				.uri("/product/" + "STRING_PATH_VARIABLE")
-				.exchange()
-				.expectHeader().contentType(APPLICATION_JSON)
-				.expectStatus().isBadRequest()
-				.expectBody()
-				.jsonPath("$.path").isEqualTo("/product/" + "STRING_PATH_VARIABLE");
+	void deleteProduct() {
+
+		int productId = 1;
+
+		postAndVerifyProduct(productId, OK);
+		assertTrue(repository.findByProductId(productId).isPresent());
+
+		deleteAndVerifyProduct(productId, OK);
+		assertFalse(repository.findByProductId(productId).isPresent());
+
+		deleteAndVerifyProduct(productId, OK);
 	}
 
+	@Test
+	void getProductInvalidParameterString() {
+
+		getAndVerifyProduct("/no-integer", BAD_REQUEST)
+				.jsonPath("$.path").isEqualTo("/product/no-integer")
+				.jsonPath("$.message").isEqualTo("Type mismatch.");
+	}
+
+	@Test
+	void getProductNotFound() {
+
+		int productIdNotFound = 13;
+		getAndVerifyProduct(productIdNotFound, NOT_FOUND)
+				.jsonPath("$.path").isEqualTo("/product/" + productIdNotFound)
+				.jsonPath("$.message").isEqualTo("Product with productId "+ productIdNotFound+" not found.");
+	}
+
+	@Test
+	void getProductInvalidParameterNegativeValue() {
+
+		int productIdInvalid = -1;
+
+		getAndVerifyProduct(productIdInvalid, UNPROCESSABLE_ENTITY)
+				.jsonPath("$.path").isEqualTo("/product/" + productIdInvalid)
+				.jsonPath("$.message").isEqualTo("Invalid productId: " + productIdInvalid);
+	}
+
+	private WebTestClient.BodyContentSpec getAndVerifyProduct(int productId, HttpStatus expectedStatus) {
+		return getAndVerifyProduct("/" + productId, expectedStatus);
+	}
+
+	private WebTestClient.BodyContentSpec getAndVerifyProduct(String productIdPath, HttpStatus expectedStatus) {
+		return client.get()
+				.uri("/product" + productIdPath)
+				.accept(APPLICATION_JSON)
+				.exchange()
+				.expectStatus().isEqualTo(expectedStatus)
+				.expectHeader().contentType(APPLICATION_JSON)
+				.expectBody();
+	}
+
+	private WebTestClient.BodyContentSpec postAndVerifyProduct(int productId, HttpStatus expectedStatus) {
+		Product product = new Product(productId, "Name " + productId, productId, "SA");
+		return client.post()
+				.uri("/product")
+				.body(just(product), Product.class)
+				.accept(APPLICATION_JSON)
+				.exchange()
+				.expectStatus().isEqualTo(expectedStatus)
+				.expectHeader().contentType(APPLICATION_JSON)
+				.expectBody();
+	}
+
+	private WebTestClient.BodyContentSpec deleteAndVerifyProduct(int productId, HttpStatus expectedStatus) {
+		return client.delete()
+				.uri("/product/" + productId)
+				.accept(APPLICATION_JSON)
+				.exchange()
+				.expectStatus().isEqualTo(expectedStatus)
+				.expectBody();
+	}
 }

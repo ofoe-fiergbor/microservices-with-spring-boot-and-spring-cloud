@@ -3,10 +3,10 @@ package se.magnus.api.core.product;
 
 /**PRODUCT REQUEST DTO*/
 public class Product {
-    private final int productId;
-    private final String name;
-    private final int weight;
-    private final String serviceAddress;
+    private int productId;
+    private String name;
+    private int weight;
+    private String serviceAddress;
 
     public Product() {
         productId = 0;
@@ -22,19 +22,38 @@ public class Product {
         this.serviceAddress = serviceAddress;
     }
 
+
     public int getProductId() {
-        return productId;
+        return this.productId;
+    }
+
+    public void setProductId(int productId) {
+        this.productId = productId;
     }
 
     public String getName() {
-        return name;
+        return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public int getWeight() {
-        return weight;
+        return this.weight;
+    }
+
+    public void setWeight(int weight) {
+        this.weight = weight;
     }
 
     public String getServiceAddress() {
-        return serviceAddress;
+        return this.serviceAddress;
     }
+
+    public void setServiceAddress(String serviceAddress) {
+        this.serviceAddress = serviceAddress;
+    }
+
+
 }

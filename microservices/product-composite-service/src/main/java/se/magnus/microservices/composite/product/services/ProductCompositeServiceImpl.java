@@ -56,18 +56,63 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
                 : recommendations
                         .stream()
                         .map(recommendation -> new RecommendationSummary(recommendation.getRecommendationId(),
-                                recommendation.getAuthor(), recommendation.getRate()))
+                                recommendation.getAuthor(), recommendation.getRate(), recommendation.getContent()))
                         .toList();
         List<ReviewSummary> reviewSummaries = reviews == null ? null
                 : reviews.stream()
-                        .map(review -> new ReviewSummary(review.getReviewId(), review.getAuthor(), review.getSubject()))
+                        .map(review -> new ReviewSummary(review.getReviewId(), review.getAuthor(), review.getSubject(),
+                                review.getContent()))
                         .toList();
-   
+
         String reviewServiceAddress = (reviews != null && reviews.size() > 0) ? reviews.get(0).getServiceAddress() : "";
-        String recommendationServiceAddress = (recommendations != null && recommendations.size() > 0 )? recommendations.get(0).getServiceAddress() : "";
-        
-        ServiceAddresses serviceAddresses = new ServiceAddresses(serviceAddress, product.getServiceAddress(), reviewServiceAddress, recommendationServiceAddress);
-        return new ProductAggregate(productId, name, weight, serviceAddresses, reviewSummaries, recommendationSsSummaries);
+        String recommendationServiceAddress = (recommendations != null && recommendations.size() > 0)
+                ? recommendations.get(0).getServiceAddress()
+                : "";
+
+        ServiceAddresses serviceAddresses = new ServiceAddresses(serviceAddress, product.getServiceAddress(),
+                reviewServiceAddress, recommendationServiceAddress);
+        return new ProductAggregate(productId, name, weight, serviceAddresses, reviewSummaries,
+                recommendationSsSummaries);
+    }
+
+    @Override
+    public void createProduct(ProductAggregate body) {
+        try {
+            Product product = new Product(body.getProductId(), body.getName(), body.getWeight(), null);
+            serviceIntegration.createProduct(product);
+
+            if (body.getRecommendations() != null) {
+                body.getRecommendations().forEach(rec -> {
+                    Recommendation recommendation = new Recommendation(body.getProductId(), rec.getRecommendationId(),
+                            rec.getAuthor(), rec.getRate(), rec.getContent(), null);
+                    serviceIntegration.createRecommendation(recommendation);
+                });
+            }
+            if (body.getReviews() != null) {
+                body.getReviews().forEach(rev -> {
+                    Review review = new Review(body.getProductId(), rev.getReviewId(), rev.getAuthor(),
+                            rev.getSubject(), rev.getContent(), null);
+                    serviceIntegration.createReview(review);
+                });
+            }
+        } catch (RuntimeException re) {
+            LOG.warn("createCompositeProduct failed", re);
+            throw re;
+        }
+
+    }
+
+    @Override
+    public void deleteProduct(int productId) {
+        try {
+            serviceIntegration.deleteProduct(productId);
+            serviceIntegration.deleteRecommendations(productId);
+            serviceIntegration.deleteReviews(productId);
+        } catch (RuntimeException e) {
+            LOG.warn("createCompositeProduct failed", e);
+            throw e;
+        }
+
     }
 
 }
